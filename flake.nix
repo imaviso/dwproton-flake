@@ -1,5 +1,5 @@
 {
-  description = "CachyOS Proton compatibility layer";
+  description = "DW-Proton compatibility layer";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -29,4 +29,3 @@
     };
   };
 }
-

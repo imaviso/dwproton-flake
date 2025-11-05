@@ -1,4 +1,4 @@
-name: Update Proton CachyOS
+name: Update DW-Proton
 
 on:
   schedule:
@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,51 +25,52 @@ jobs:
           # Get current version from default.nix
           CURRENT_VERSION=$(grep 'version = ' default.nix | sed 's/.*version = "\(.*\)";/\1/')
           echo "Current version: $CURRENT_VERSION"
-          
-          # Get latest SLR release from GitHub API with error handling
-          echo "Fetching releases from GitHub API..."
-          API_RESPONSE=$(curl -s -w "%{http_code}" "https://api.github.com/repos/CachyOS/proton-cachyos/releases")
-          HTTP_CODE="${API_RESPONSE: -3}"
-          JSON_RESPONSE="${API_RESPONSE%???}"
-          
+
+          # Get latest release from DawnWine Forgejo API with error handling
+          echo "Fetching releases from DawnWine API..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" "https://dawn.wine/api/v1/repos/dawn-winery/dwproton/releases")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          JSON_RESPONSE=$(echo "$RESPONSE" | head -n -1)
+
           echo "HTTP Status Code: $HTTP_CODE"
-          
+
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "Error: GitHub API returned HTTP $HTTP_CODE"
+            echo "Error: DawnWine API returned HTTP $HTTP_CODE"
             echo "Response: $JSON_RESPONSE"
             exit 1
           fi
-          
+
           # Check if response is valid JSON and contains releases
           if ! echo "$JSON_RESPONSE" | jq empty 2>/dev/null; then
-            echo "Error: Invalid JSON response from GitHub API"
+            echo "Error: Invalid JSON response from DawnWine API"
             echo "Response: $JSON_RESPONSE"
             exit 1
           fi
-          
+
           # Check if response is an array
           if [ "$(echo "$JSON_RESPONSE" | jq 'type')" != '"array"' ]; then
-            echo "Error: GitHub API response is not an array"
+            echo "Error: DawnWine API response is not an array"
             echo "Response type: $(echo "$JSON_RESPONSE" | jq 'type')"
             echo "Response: $JSON_RESPONSE"
             exit 1
           fi
-          
-          LATEST_TAG=$(echo "$JSON_RESPONSE" | jq -r '.[] | select(.tag_name | contains("-slr")) | .tag_name' | head -1)
-          
+
+          # Get the latest dwproton release tag
+          LATEST_TAG=$(echo "$JSON_RESPONSE" | jq -r '.[] | select(.tag_name | startswith("dwproton-")) | .tag_name' | head -1)
+
           if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
-            echo "Error: Could not find SLR release"
+            echo "Error: Could not find dwproton release"
             echo "Available releases:"
             echo "$JSON_RESPONSE" | jq -r '.[].tag_name' | head -10
             exit 1
           fi
-          
-          # Remove 'cachyos-' prefix to get version
-          LATEST_VERSION=${LATEST_TAG#cachyos-}
-          
+
+          # Remove 'dwproton-' prefix to get version
+          LATEST_VERSION=${LATEST_TAG#dwproton-}
+
           echo "Latest tag: $LATEST_TAG"
           echo "Latest version: $LATEST_VERSION"
-          
+
           # Check if version is different
           if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
             echo "New version available!"
@@ -86,9 +87,9 @@ jobs:
         if: steps.check_version.outputs.update_needed == 'true'
         id: calc_hash
         run: |
-          URL="https://github.com/CachyOS/proton-cachyos/releases/download/${{ steps.check_version.outputs.latest_tag }}/proton-cachyos-${{ steps.check_version.outputs.latest_version }}-x86_64_v3.tar.xz"
+          URL="https://dawn.wine/api/v1/repos/dawn-winery/dwproton/releases/download/${{ steps.check_version.outputs.latest_tag }}/dwproton-${{ steps.check_version.outputs.latest_version }}-x86_64_v3.tar.xz"
           echo "Calculating hash for: $URL"
-          
+
           HASH=$(nix-prefetch-url --unpack "$URL")
           SRI_HASH=$(nix hash convert --to sri sha256:$HASH)
           echo "Hash: $HASH"
@@ -100,7 +101,7 @@ jobs:
         run: |
           # Update version
           sed -i 's/version = ".*";/version = "${{ steps.check_version.outputs.latest_version }}";/' default.nix
-          
+
           # Update hash (using SRI format) - use | as delimiter to avoid issues with / in hash
           sed -i 's|hash = ".*";|hash = "${{ steps.calc_hash.outputs.sri_hash }}";|' default.nix
 
@@ -109,16 +110,16 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Update proton-cachyos to ${{ steps.check_version.outputs.latest_version }}"
-          title: "Update proton-cachyos to ${{ steps.check_version.outputs.latest_version }}"
+          commit-message: "Update dwproton to ${{ steps.check_version.outputs.latest_version }}"
+          title: "Update dwproton to ${{ steps.check_version.outputs.latest_version }}"
           body: |
-            Automated update of proton-cachyos from ${{ steps.check_version.outputs.current_version }} to ${{ steps.check_version.outputs.latest_version }}.
-            
+            Automated update of dwproton from ${{ steps.check_version.outputs.current_version }} to ${{ steps.check_version.outputs.latest_version }}.
+
             - **Previous version**: ${{ steps.check_version.outputs.current_version }}
             - **New version**: ${{ steps.check_version.outputs.latest_version }}
             - **Release tag**: ${{ steps.check_version.outputs.latest_tag }}
-            - **Release URL**: https://github.com/CachyOS/proton-cachyos/releases/tag/${{ steps.check_version.outputs.latest_tag }}
-            
+            - **Release URL**: https://dawn.wine/api/v1/repos/dawn-winery/dwproton/releases/tag/${{ steps.check_version.outputs.latest_tag }}
+
             This PR was automatically generated by the update workflow.
-          branch: update-proton-cachyos
+          branch: update-dwproton
           delete-branch: true
