@@ -16,14 +16,22 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   dontConfigure = true;
   dontBuild = true;
 
+  outputs = [
+    "out"
+    "steamcompattool"
+  ];
+
   installPhase = ''
     runHook preInstall
 
-    # Install directly to Steam compatibility tools directory
-    mkdir -p $out
-    ln -s $src/* $out/
-    rm $out/compatibilitytool.vdf
-    cp $src/compatibilitytool.vdf $out/
+    # Make it impossible to add to an environment. Use programs.steam.extraCompatPackages instead.
+    echo "${finalAttrs.pname} should not be installed into environments. Please use programs.steam.extraCompatPackages instead." > $out
+
+    # Create steamcompattool output and symlink everything, then copy compatibilitytool.vdf for modification
+    mkdir $steamcompattool
+    ln -s $src/* $steamcompattool
+    rm $steamcompattool/compatibilitytool.vdf
+    cp $src/compatibilitytool.vdf $steamcompattool
 
     runHook postInstall
   '';
@@ -32,7 +40,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     description = ''
       DW-Proton compatibility layer.
 
-      (This is installed directly to ~/.local/share/Steam/compatibilitytools.d/)
+      (This is intended for use in the `programs.steam.extraCompatPackages` option only.)
     '';
     homepage = "https://dawn.wine/";
     license = licenses.unfree;
