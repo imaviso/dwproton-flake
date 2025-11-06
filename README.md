@@ -28,10 +28,10 @@ Add to your `flake.nix`:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    cachy-proton.url = "github:Momoyaan/dwproton-flake";
+    dw-proton.url = "github:Momoyaan/dwproton-flake";
   };
 
-  outputs = { self, nixpkgs, cachy-proton, ... }: {
+  outputs = { self, nixpkgs, dw-proton, ... }: {
     nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
      ...
