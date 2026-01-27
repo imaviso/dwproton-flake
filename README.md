@@ -12,7 +12,7 @@ A Nix flake that packages the latest [DW-Proton](https://dawn.wine/) compatibili
 
 ### NixOS
 
-Add the flake to your inputs and add the package to `programs.steam.extraCompatPackages`. Note that you must select the `steamcompattool` output:
+Add the flake to your inputs and add the package to `programs.steam.extraCompatPackages`:
 
 ```nix
 {
@@ -29,7 +29,7 @@ Add the flake to your inputs and add the package to `programs.steam.extraCompatP
           programs.steam = {
             enable = true;
             extraCompatPackages = [
-              dw-proton.packages.x86_64-linux.dw-proton.steamcompattool
+              dw-proton.packages.${pkgs.stdenv.hostPlatform.system}.dw-proton
             ];
           };
         })
