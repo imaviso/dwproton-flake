@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v19
@@ -108,7 +110,7 @@ jobs:
       - name: Create Pull Request
         if: steps.check_version.outputs.update_needed == 'true'
         id: create_pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PAT_TOKEN }}
           commit-message: "Update dwproton to ${{ steps.check_version.outputs.latest_version }}"
