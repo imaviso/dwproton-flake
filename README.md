@@ -52,7 +52,7 @@ nix build
 
 ## Updates
 
-This flake automatically checks for new DW-Proton releases daily and creates pull requests when updates are available.
+This flake automatically checks for new DW-Proton releases daily and commits directly to main when updates are available.
 
 ## License
 
